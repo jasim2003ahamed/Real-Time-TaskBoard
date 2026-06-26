@@ -1,11 +1,11 @@
 "use client";
 
 import React, { useState } from 'react';
-import axios from 'axios';
 import { Card, ColumnStatus, ColumnType, WSMessage } from '../types';
 import { useWebSocket } from '../hooks/useWebSocket';
 import { Header } from '../components/Header';
 import { Column } from '../components/Column';
+import { cardService } from '../services/cardService';
 
 export default function BoardPage() {
   const [cards, setCards] = useState<Card[]>([]);
@@ -19,8 +19,8 @@ export default function BoardPage() {
   // Fetch cards from REST API
   const fetchCards = async () => {
     try {
-      const res = await axios.get<Card[]>('/api/cards');
-      setCards(res.data);
+      const data = await cardService.getAll();
+      setCards(data);
     } catch (error) {
       console.error('Error loading cards:', error);
     }
@@ -71,8 +71,7 @@ export default function BoardPage() {
   // Add Card REST + WS
   const handleAddCard = async (status: ColumnStatus, title: string) => {
     try {
-      const res = await axios.post<Card>('/api/cards', { title, status });
-      const newCard = res.data;
+      const newCard = await cardService.create(title, status);
       setCards((prev) => [...prev, newCard].sort((a, b) => a.position - b.position));
       sendMessage('CARD_CREATED', { card: newCard });
     } catch (error) {
@@ -83,7 +82,7 @@ export default function BoardPage() {
   // Delete Card REST + WS
   const handleDeleteCard = async (id: number) => {
     try {
-      await axios.delete('/api/cards', { params: { id } });
+      await cardService.delete(id);
       setCards((prev) => prev.filter((c) => c.id !== id));
       sendMessage('CARD_DELETED', { id });
     } catch (error) {
@@ -97,8 +96,7 @@ export default function BoardPage() {
     setCards((prev) => prev.map((c) => (c.id === id ? { ...c, title, updated_at: new Date().toISOString() } : c)));
 
     try {
-      const res = await axios.patch<Card>('/api/cards', { id, title });
-      const updatedCard = res.data;
+      const updatedCard = await cardService.rename(id, title);
       setCards((prev) => prev.map((c) => (c.id === id ? updatedCard : c)).sort((a, b) => a.position - b.position));
       sendMessage('CARD_UPDATED', { card: updatedCard });
     } catch (error) {
@@ -198,13 +196,7 @@ export default function BoardPage() {
     setCards(updatedCardsOptimistic);
 
     try {
-      const res = await axios.patch<Card>('/api/cards', {
-        id: cardId,
-        status: targetStatus,
-        prevPosition,
-        nextPosition,
-      });
-      const updatedCard = res.data;
+      const updatedCard = await cardService.reorder(cardId, targetStatus, prevPosition, nextPosition);
       setCards((prev) => prev.map((c) => (c.id === cardId ? updatedCard : c)).sort((a, b) => a.position - b.position));
       sendMessage('CARD_UPDATED', { card: updatedCard });
     } catch (error) {

@@ -65,7 +65,7 @@ psql -U postgres -h 127.0.0.1 -d realtime_taskboard -f backend/schema.sql
 
 > [!TIP]
 > The database pool client automatically falls back to:
-> `postgresql://postgres:2003@Jasim@127.0.0.1:5432/realtime_taskboard`
+> `postgresql://username:password@localhost:5432/realtime_taskboard`
 > If you have custom database credentials, you can configure them by setting the `DATABASE_URL` environment variable:
 > `DATABASE_URL="postgresql://username:password@localhost:5432/dbname"`
 
@@ -255,5 +255,6 @@ Sent by a client when a card is deleted:
 1. **Multi-Board Support**: Allow users to create multiple boards and transition between them via URL parameters (e.g. `/board/1`, `/board/2`).
 2. **Collaborative Cursor Tracking**: Broadcast active cursor coordinates over WebSockets to show other team members moving on screen.
 3. **Card Re-indexing Service**: A daily cleanup cron script to clean up floating point divisions and reset positions back to clean integers (`1000`, `2000`, `3000`).
+
 
 
